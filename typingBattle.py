@@ -2,6 +2,8 @@ from tkinter import *
 from tkinter import ttk
 import os
 
+windowSize = "800x600+0+0"  # 共通のウインドウサイズ
+
 
 # トップ画面
 def titleWindow():
@@ -21,7 +23,8 @@ def titleWindow():
     # GUI作成
     root = Tk()
     root.title("titleWindow")
-    root.geometry("800x600+0+0")
+    root.resizable(0, 0)  # ウインドウサイズの変更不可設定
+    root.geometry(windowSize)
 
     # タイトル画面のタイトル
     label_title = Label(root, text="タイピングバトル", font=("", 70), height=3)
@@ -81,7 +84,8 @@ def menuWindow():
     # GUI作成
     root = Tk()
     root.title("menuWindow")
-    root.geometry("800x600+0+0")
+    root.resizable(0, 0)  # ウインドウサイズの変更不可設定
+    root.geometry(windowSize)
     label_title = Label(root, text="メニュー画面", font=("", 70), height=3)
     # label_title.pack(anchor="n")
     label_title.grid(columnspan=3)
@@ -135,7 +139,8 @@ def galleryWindow():
     # GUI作成
     root = Tk()
     root.title("galleryWindow")
-    root.geometry("800x600+0+0")
+    root.resizable(0, 0)  # ウインドウサイズの変更不可設定
+    root.geometry(windowSize)
 
     label_title = Label(root, text="ギャラリー画面", font=("", 70), height=3)
     label_title.pack(anchor="n")
@@ -160,7 +165,8 @@ def settingWindow():
     # GUI作成
     root = Tk()
     root.title("settingWindow")
-    root.geometry("800x600+0+0")
+    root.resizable(0, 0)  # ウインドウサイズの変更不可設定
+    root.geometry(windowSize)
 
     label_title = Label(root, text="設定画面", font=("", 70), height=3)
     label_title.pack(anchor="n")
@@ -189,7 +195,8 @@ def stageSelectWindow():
     # GUI作成
     root = Tk()
     root.title("stageSelectWindow")
-    root.geometry("800x600+0+0")
+    root.resizable(0, 0)  # ウインドウサイズの変更不可設定
+    root.geometry(windowSize)
 
     label_title = Label(root, text="ステージ選択画面", font=("", 70), height=3)
     label_title.pack(anchor="n")
@@ -198,12 +205,13 @@ def stageSelectWindow():
     button_back = Button(root, text="もどる", font=("", 50), width=6, command=back_button)
     button_back.pack()
 
-    button_start = Button(root, text="ゲームスタート", font=("", 50), width=6, command=start_button)
+    button_start = Button(root, text="ゲームスタート", font=("", 50), command=start_button)
     button_start.pack()
 
     # GUIの表示
     root.mainloop()
     # ---------------------------------
+
 
 def gameMainWindow():
     # menuWindowに戻るボタン
@@ -211,38 +219,47 @@ def gameMainWindow():
         root.destroy()
         menuWindow()
 
+    # gameResultWindowへ進むボタン
+    # デバック用?
+    # 本来はタイピングがクリア出来たらgameResultWindowへ行く
+    def result_button():
+        root.destroy()
+        gameResultWindow()
+
     # 入力時に正しいかどうか判定する
     # 入力した時に何かしたいときは個々に書く
     def check_input(event):
         print("pressed", repr(event.char))
         true_text = trueStr_buff.get()
         your_text = yourStr_buff.get()
+        ans_text = ansStr_buff.get()
         your_over = len(your_text)
-        if(true_text[your_over] == os.linesep):
+        if true_text[your_over] == os.linesep:
             # 改行があったときは飛ばす
             your_over += 1
             your_text += os.linesep
-            while(true_text[your_over] == " " or true_text[your_over] == "\t"):
+            while true_text[your_over] == " " or true_text[your_over] == "\t":
                 # 更に行頭の空白を飛ばす
-                if(true_text[your_over] == " "):
+                if true_text[your_over] == " ":
                     your_over += 1
                     your_text += " "
-                elif(true_text[your_over] == "\t"):
+                elif true_text[your_over] == "\t":
                     your_over += 1
                     your_text += "\t"
-        if(true_text[your_over] == event.char):
+        if true_text[your_over] == event.char:
             # キー入力が正しいとき
-            your_text += event.char
-            yourStr_buff.set(your_text)
+            ans_text += event.char
+            ansStr_buff.set(ans_text)
+
+    def delete_entry(event):
+        yourEntry.delete(0, END)  # Entry内のテキストを消す
 
     # ---------------------------------
     # GUI作成
     root = Tk()
-    root.title("settingWindow")
-    root.geometry("800x600+0+0")
-
-    """label_title = Label(root, text="設定画面", font=("",70), height=3)
-    label_title.pack(anchor="n")"""
+    root.title("gameMainWindow")
+    root.resizable(0, 0)  # ウインドウサイズの変更不可設定
+    root.geometry(windowSize)
 
     # フレームの装飾設定
     cnf = {"bg": "white", "bd": 5, "relief": GROOVE}
@@ -254,8 +271,7 @@ def gameMainWindow():
         print("Hello World!")
         i = input(">>> ")
         for n in range(int(i)):
-            print(n)
-    """
+            print(n)"""
 
     # 正解を表示するフレームの生成
     trueFrame = Frame(root, cnf, width=390, height=310)
@@ -267,14 +283,20 @@ def gameMainWindow():
     yourFrame = Frame(root, cnf, width=390, height=310)
     yourStr_buff = StringVar()
     yourStr_buff.set("")
-    yourLabel = Label(yourFrame, textvariable=yourStr_buff, bg="red")
-    yourLabel.focus_set()
-    yourLabel.bind("<Key>", check_input)
+    ansStr_buff = StringVar()
+    ansStr_buff.set("")
+    ansLabel = Label(yourFrame, textvariable=ansStr_buff, bg="red")
+    yourEntry = Entry(yourFrame, textvariable=yourStr_buff)
+    yourEntry.focus_set()
+    yourEntry.bind("<Key>", check_input)
+    yourEntry.bind("<Delete>", delete_entry)
 
     # ボタンの装飾の設定
     buttonCnf = {"bg": "white", "bd": 3, "relief": RAISED}
     # 戻るボタンの生成
     backButton = Button(root, buttonCnf, text="もどる", command=back_button)
+
+    resultButton = Button(root, buttonCnf, text="すすむ", command=result_button)
 
     battleFrame.place(x=10, y=10)
     battleLabel.place(x=10, y=10)
@@ -283,9 +305,11 @@ def gameMainWindow():
     trueLabel.place(x=10, y=10)
 
     yourFrame.place(x=405, y=260)
-    yourLabel.place(x=20, y=35)
+    ansLabel.place(x=10, y=10)
+    yourEntry.place(x=10, y=40)
 
     backButton.place(x=700, y=570)
+    resultButton.place(x=750, y=570)
 
     # GUIの表示
     root.mainloop()
@@ -302,7 +326,8 @@ def gameResultWindow():
     # GUI作成
     root = Tk()
     root.title("gameResultWindow")
-    root.geometry("800x600+0+0")
+    root.resizable(0, 0)  # ウインドウサイズの変更不可設定
+    root.geometry(windowSize)
 
     label_title = Label(root, text="ゲームクリア画面", font=("", 70), height=3)
     label_title.pack(anchor="n")
@@ -316,5 +341,6 @@ def gameResultWindow():
     # ---------------------------------
 
 
-# 最初に表示される画面
-titleWindow()
+if __name__ == "__main__":
+    # 最初に表示される画面
+    titleWindow()
