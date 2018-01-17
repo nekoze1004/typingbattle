@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+import os
 
 
 # トップ画面
@@ -204,12 +205,35 @@ def stageSelectWindow():
     root.mainloop()
     # ---------------------------------
 
-
 def gameMainWindow():
     # menuWindowに戻るボタン
     def back_button():
         root.destroy()
         menuWindow()
+
+    # 入力時に正しいかどうか判定する
+    # 入力した時に何かしたいときは個々に書く
+    def check_input(event):
+        print("pressed", repr(event.char))
+        true_text = trueStr_buff.get()
+        your_text = yourStr_buff.get()
+        your_over = len(your_text)
+        if(true_text[your_over] == os.linesep):
+            # 改行があったときは飛ばす
+            your_over += 1
+            your_text += os.linesep
+            while(true_text[your_over] == " " or true_text[your_over] == "\t"):
+                # 更に行頭の空白を飛ばす
+                if(true_text[your_over] == " "):
+                    your_over += 1
+                    your_text += " "
+                elif(true_text[your_over] == "\t"):
+                    your_over += 1
+                    your_text += "\t"
+        if(true_text[your_over] == event.char):
+            # キー入力が正しいとき
+            your_text += event.char
+            yourStr_buff.set(your_text)
 
     # ---------------------------------
     # GUI作成
@@ -235,11 +259,17 @@ def gameMainWindow():
 
     # 正解を表示するフレームの生成
     trueFrame = Frame(root, cnf, width=390, height=310)
-    trueLabel = Label(trueFrame, text=trueStr)
+    trueStr_buff = StringVar()
+    trueStr_buff.set(trueStr)
+    trueLabel = Label(trueFrame, textvariable=trueStr_buff)
 
     # 入力していくフレームの生成
     yourFrame = Frame(root, cnf, width=390, height=310)
-    yourLabel = Label(yourFrame, text="your", bg="red")
+    yourStr_buff = StringVar()
+    yourStr_buff.set("")
+    yourLabel = Label(yourFrame, textvariable=yourStr_buff, bg="red")
+    yourLabel.focus_set()
+    yourLabel.bind("<Key>", check_input)
 
     # ボタンの装飾の設定
     buttonCnf = {"bg": "white", "bd": 3, "relief": RAISED}
