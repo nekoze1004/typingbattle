@@ -222,7 +222,16 @@ def gameMainWindow():
             # 改行があったときは飛ばす
             your_over += 1
             your_text += os.linesep
+            while(true_text[your_over] == " " or true_text[your_over] == "\t"):
+                # 更に行頭の空白を飛ばす
+                if(true_text[your_over] == " "):
+                    your_over += 1
+                    your_text += " "
+                elif(true_text[your_over] == "\t"):
+                    your_over += 1
+                    your_text += "\t"
         if(true_text[your_over] == event.char):
+            # キー入力が正しいとき
             your_text += event.char
             yourStr_buff.set(your_text)
 
