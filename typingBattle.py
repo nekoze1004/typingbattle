@@ -363,6 +363,7 @@ def gameMainWindow(set_language):
         print("your_over:{0}".format(your_over))
         if len(true_text) <= your_over + 1:
             print("終わり")
+
             result_button()
             return
         while True:
