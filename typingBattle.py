@@ -7,32 +7,33 @@ import os
 import re
 import sqlite3
 from contextlib import closing
-
+import random
 
 windowSize = "800x600+0+0"  # 共通のウインドウサイズ
 
-ext_dir = {"Ruby":"rb","Python":"py","Swift":"swift"} 
+ext_dir = {"Ruby": "rb", "Python": "py", "Swift": "swift"}
 
 g = Github(setting.Github_User, setting.Github_Pass)
 dbname = "database.sqlite"
 
 user = "default"
 
+
 def get_count(name):
-        row=""
-        with closing(sqlite3.connect(dbname)) as conn:
-            cur = conn.cursor()
+    row = ""
+    with closing(sqlite3.connect(dbname)) as conn:
+        cur = conn.cursor()
 
-            get_sql = "update users set count = count + 1 where name = '{0}';".format(name)
-            print(get_sql)
-            cur.execute(get_sql)
+        get_sql = "update users set count = count + 1 where name = '{0}';".format(name)
+        print(get_sql)
+        cur.execute(get_sql)
 
-            row = c.fetchone()
-            print(row)
-            conn.commit()
-            conn.close()
-        
-        return row
+        row = c.fetchone()
+        print(row)
+        conn.commit()
+        conn.close()
+
+    return row
 
 
 # トップ画面
@@ -49,12 +50,13 @@ def titleWindow():
             create_sql = "create table if not exists users(name, count);"
             cur.execute(create_sql)
 
-            regist_sql = "insert into users(name, count) select '{0}',0 where not exists(select * from users where name = '{0}');".format(name)
+            regist_sql = "insert into users(name, count) select '{0}',0 where not exists(select * from users where name = '{0}');".format(
+                name)
             cur.execute(regist_sql)
-            
+
             conn.commit()
             conn.close()
-    
+
     # 「はじめる」ボタンを押してメニュー画面に遷移
     def start_button():
         global user
@@ -239,8 +241,8 @@ def stageSelectWindow(set_language):
         root.destroy()
         gameMainWindow(set_language)
 
-    def search(gh,repo_keyword, language):
-        return gh.search_repositories("{0}+language:{1}".format(repo_keyword,language),sort="stars")[0]
+    def search(gh, repo_keyword, language):
+        return gh.search_repositories("{0}+language:{1}".format(repo_keyword, language), sort="stars")[0]
 
     def clone(repo, path):
         clone_path = "{0}/{1}".format(path, repo.name)
@@ -248,7 +250,7 @@ def stageSelectWindow(set_language):
             git.Git().clone("{0}".format(repo.git_url), clone_path)
         regist(clone_path)
 
-    def regist(p): # p=path以下のファイルをデータベースに登録
+    def regist(p):  # p=path以下のファイルをデータベースに登録
         with closing(sqlite3.connect(dbname)) as conn:
             c = conn.cursor()
 
@@ -257,10 +259,11 @@ def stageSelectWindow(set_language):
             c.execute(create_sql)
 
             regist_sql = '''insert into files(name, path, complete, extension) select ?,?,?,? where not exists(select * from files where path = ?);'''
-            def crawling(path): # path以下のファイルを洗い出し
+
+            def crawling(path):  # path以下のファイルを洗い出し
                 l = []
                 for i in os.listdir(path):
-                    if i[0] == ".": # dotfileをスルー
+                    if i[0] == ".":  # dotfileをスルー
                         continue
                     new_path = os.path.join(path, i)
                     if os.path.isdir(new_path):
@@ -273,6 +276,7 @@ def stageSelectWindow(set_language):
                         ext = ext.replace(".", "", 1)
                         l.append((name, path_s, complete, ext, path_s))
                 return l
+
             file_list = crawling(p)
 
             print(file_list)
@@ -281,12 +285,12 @@ def stageSelectWindow(set_language):
             conn.commit()
             conn.close()
 
-    def prepare_souce(gh, repo_keyword,language):
-        repo = search(gh,repo_keyword, language)
+    def prepare_souce(gh, repo_keyword, language):
+        repo = search(gh, repo_keyword, language)
         clone(repo, "repos")
 
     repo_keyword = "sample"
-    prepare_souce(g,repo_keyword,set_language)
+    prepare_souce(g, repo_keyword, set_language)
 
     # ---------------------------------
     # GUI作成
@@ -304,8 +308,6 @@ def stageSelectWindow(set_language):
 
     button_start = Button(root, text="ゲームスタート", font=("", 50), command=start_button)
     button_start.pack()
-
-
 
     # GUIの表示
     root.mainloop()
@@ -326,25 +328,26 @@ def gameMainWindow(set_language):
         gameResultWindow()
 
     # もしtext[count]がコメントならば次のコメンドじゃないところまでcountをすすめて返す
-    comment = {"Ruby":("#"), "Python":("#","'''",'"""'), "swift":("//")}
+    comment = {"Ruby": ("#"), "Python": ("#", "'''", '"""'), "swift": ("//")}
+
     def overComment(text, count, set_language):
         puls = 0
         for c in comment[set_language]:
             print("コメントチェック:{0}".format(c))
-            # print(text[count:])
+            print(text[count:])
             if text[count:].startswith(c):
                 print("発見")
                 if comment[set_language].index(c) == 0:
-                    while not text[count+puls:].startswit(os.linesep):
+
+                    while not text[count + puls:].startswith(os.linesep):
                         puls += 1
-                    return puls+count
+                    return puls + count
                 else:
-                    puls = text[count+3:].find(c)
+                    puls = text[count + 3:].find(c)
                     # print("{0}文字目で終わり".format(count))
-                    return puls+count+(len(c)*2)
+                    return puls + count + (len(c) * 2)
 
         return count
-
 
     # 入力時に正しいかどうか判定する
     # 入力した時に何かしたいときは個々に書く
@@ -353,15 +356,20 @@ def gameMainWindow(set_language):
         true_text = trueStr_buff.get()
         your_text = yourStr_buff.get()
         your_over = len(your_text)
+        enemyHP = EnemyHP.get()
+        enemyX = EnemyPoseX.get()
+        enemyY = EnemyPoseY.get()
         print("len(true_text):{0}".format(len(true_text)))
         print("your_over:{0}".format(your_over))
-        if len(true_text) <= your_over+1:
-                print("終わり")
-                return
+        if len(true_text) <= your_over + 1:
+            print("終わり")
+
+            result_button()
+            return
         while True:
-            next_over = overComment(true_text,your_over, set_language)
+            next_over = overComment(true_text, your_over, set_language)
             if your_over < next_over:
-                for i in range(your_over,next_over):
+                for i in range(your_over, next_over):
                     your_text += true_text[your_over]
                     your_over += 1
             else:
@@ -379,9 +387,9 @@ def gameMainWindow(set_language):
                     your_over += 1
                     your_text += "\t"
             while True:
-                next_over = overComment(true_text,your_over, set_language)
+                next_over = overComment(true_text, your_over, set_language)
                 if your_over < next_over:
-                    for i in range(your_over,next_over):
+                    for i in range(your_over, next_over):
                         your_text += true_text[your_over]
                         your_over += 1
                 else:
@@ -390,6 +398,9 @@ def gameMainWindow(set_language):
             # キー入力が正しいとき
             your_text += true_text[your_over]
             your_over += 1
+            enemyHP -= 10
+            enemyX += random.randint(-10, 10)
+            enemyY += random.randint(-10, 10)
             with closing(sqlite3.connect(dbname)) as conn:
                 c = conn.cursor()
                 print(user)
@@ -399,6 +410,9 @@ def gameMainWindow(set_language):
                 conn.commit()
                 conn.close()
         yourStr_buff.set(your_text)
+        EnemyHP.set(enemyHP)
+        EnemyPoseX.set(enemyX)
+        EnemyPoseY.set(enemyY)
 
     # ---------------------------------
     # GUI作成
@@ -407,18 +421,12 @@ def gameMainWindow(set_language):
     root.resizable(0, 0)  # ウインドウサイズの変更不可設定
     root.geometry(windowSize)
 
-    # フレームの装飾設定
-    cnf = {"bg": "white", "bd": 5, "relief": GROOVE}
-    # 戦闘画面のフレーム生成
-    battleFrame = Frame(root, cnf, width=785, height=245)
-    battleLabel = Label(battleFrame, text="unk", bg="green")
-
     trueStr = """if __name__ == "__main__":
         print("Hello World!")
         i = input(">>> ")
         for n in range(int(i)):
             print(n)"""
-    
+
     def select_source(ext):
         with closing(sqlite3.connect((dbname))) as conn:
             c = conn.cursor()
@@ -435,10 +443,13 @@ def gameMainWindow(set_language):
 
     print(set_language)
     row = select_source(ext_dir[set_language])
+
     print(row)
     set_language = "Python"
     trueStr = load_source("./debug.py")
 
+    # フレームの装飾設定
+    cnf = {"bg": "white", "bd": 5, "relief": GROOVE}
 
     # 正解を表示するフレームの生成
     trueFrame = Frame(root, cnf, width=390, height=310)
@@ -453,8 +464,26 @@ def gameMainWindow(set_language):
     yourLabel = Label(yourFrame, textvariable=yourStr_buff, bg="red")
     yourLabel.focus_set()
     yourLabel.bind("<Key>", check_input)
+
+    # 戦闘画面のフレーム生成
+    battleFrame = Frame(root, cnf, width=785, height=245)
+    battleLabel = Label(battleFrame, text="てき が あらわれた !!")
+
+    EnemyCanvas = Canvas(battleFrame, width=128, height=128)
+    EnemyImg = PhotoImage(file="python-icon_128.png")
+    EnemyCanvas.create_image(0, 0, image=EnemyImg, anchor=NW)
+    EnemyName = Label(battleFrame, text="ニショクヘビ")
+    EnemyPoseX = IntVar()
+    EnemyPoseX.set(325)
+    EnemyPoseY = IntVar()
+    EnemyPoseY.set(80)
+    EnemyHP = IntVar()
+    EnemyHP.set(110)
+    EnemyHPGauge = ttk.Progressbar(battleFrame, orient="horizontal", length=500, variable=EnemyHP)
+
     class Dummy_event:
-        char=""
+        char = ""
+
     dummy = Dummy_event()
     check_input(dummy)
 
@@ -467,13 +496,16 @@ def gameMainWindow(set_language):
 
     battleFrame.place(x=10, y=10)
     battleLabel.place(x=10, y=10)
+    EnemyName.place(x=50, y=50)
+    EnemyCanvas.place(x=EnemyPoseX.get(), y=EnemyPoseY.get())
+    EnemyHPGauge.place(x=120, y=50)
 
     trueFrame.place(x=10, y=260)
     trueLabel.place(x=10, y=10)
 
     yourFrame.place(x=405, y=260)
     yourLabel.place(x=10, y=10)
-    
+
     backButton.place(x=700, y=570)
     resultButton.place(x=750, y=570)
 
