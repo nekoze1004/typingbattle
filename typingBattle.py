@@ -455,13 +455,13 @@ def gameMainWindow(set_language):
     trueFrame = Frame(root, cnf, width=390, height=310)
     trueStr_buff = StringVar()
     trueStr_buff.set(trueStr)
-    trueLabel = Label(trueFrame, textvariable=trueStr_buff)
+    trueLabel = Label(trueFrame, textvariable=trueStr_buff, justify='left')
 
     # 入力していくフレームの生成
     yourFrame = Frame(root, cnf, width=390, height=310)
     yourStr_buff = StringVar()
     yourStr_buff.set("")
-    yourLabel = Label(yourFrame, textvariable=yourStr_buff, bg="red")
+    yourLabel = Label(yourFrame, textvariable=yourStr_buff, bg="red", justify='left')
     yourLabel.focus_set()
     yourLabel.bind("<Key>", check_input)
 
