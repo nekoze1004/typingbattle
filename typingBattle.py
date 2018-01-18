@@ -288,14 +288,36 @@ def gameMainWindow(set_language):
         root.destroy()
         gameResultWindow()
 
+    # もしtext[count]がコメントならば次のコメンドじゃないところまでcountをすすめて返す
+    comment = {"Ruby":("#"), "Python":("#"), "swift":("//")}
+    def overComment(text, count, set_language):
+        puls = 0
+        for c in comment[set_language]:
+            print("コメントチェック:{0}".format(c))
+            print(text[count])
+            if c == text[count]:
+                print("発見")
+                while text[count+puls] != os.linesep:
+                    puls += 1
+                return puls+count
+        return count
+
+
     # 入力時に正しいかどうか判定する
     # 入力した時に何かしたいときは個々に書く
     def check_input(event):
         print("pressed", repr(event.char))
         true_text = trueStr_buff.get()
         your_text = yourStr_buff.get()
-        ans_text = ansStr_buff.get()
         your_over = len(your_text)
+        while True:
+            next_over = overComment(true_text,your_over, set_language)
+            if your_over < next_over:
+                for i in range(your_over,next_over):
+                    your_text += true_text[your_over]
+                    your_over += 1
+            else:
+                break
         if true_text[your_over] == os.linesep:
             # 改行があったときは飛ばす
             your_over += 1
@@ -308,13 +330,19 @@ def gameMainWindow(set_language):
                 elif true_text[your_over] == "\t":
                     your_over += 1
                     your_text += "\t"
+            while True:
+                next_over = overComment(true_text,your_over, set_language)
+                if your_over < next_over:
+                    for i in range(your_over,next_over):
+                        your_text += true_text[your_over]
+                        your_over += 1
+                else:
+                    break
         if true_text[your_over] == event.char:
             # キー入力が正しいとき
-            ans_text += event.char
-            ansStr_buff.set(ans_text)
-
-    def delete_entry(event):
-        yourEntry.delete(0, END)  # Entry内のテキストを消す
+            your_text += true_text[your_over]
+            your_over += 1
+        yourStr_buff.set(your_text)
 
     # ---------------------------------
     # GUI作成
@@ -352,7 +380,8 @@ def gameMainWindow(set_language):
     print(set_language)
     row = select_source(ext_dir[set_language])
     print(row)
-    trueStr = load_source(row[1])
+    set_language = "Python"
+    trueStr = load_source("./debug.py")
 
 
     # 正解を表示するフレームの生成
@@ -365,13 +394,13 @@ def gameMainWindow(set_language):
     yourFrame = Frame(root, cnf, width=390, height=310)
     yourStr_buff = StringVar()
     yourStr_buff.set("")
-    ansStr_buff = StringVar()
-    ansStr_buff.set("")
-    ansLabel = Label(yourFrame, textvariable=ansStr_buff, bg="red")
-    yourEntry = Entry(yourFrame, textvariable=yourStr_buff)
-    yourEntry.focus_set()
-    yourEntry.bind("<Key>", check_input)
-    yourEntry.bind("<Delete>", delete_entry)
+    yourLabel = Label(yourFrame, textvariable=yourStr_buff, bg="red")
+    yourLabel.focus_set()
+    yourLabel.bind("<Key>", check_input)
+    class Dummy_event:
+        char=""
+    dummy = Dummy_event()
+    check_input(dummy)
 
     # ボタンの装飾の設定
     buttonCnf = {"bg": "white", "bd": 3, "relief": RAISED}
@@ -387,9 +416,8 @@ def gameMainWindow(set_language):
     trueLabel.place(x=10, y=10)
 
     yourFrame.place(x=405, y=260)
-    ansLabel.place(x=10, y=10)
-    yourEntry.place(x=10, y=40)
-
+    yourLabel.place(x=10, y=10)
+    
     backButton.place(x=700, y=570)
     resultButton.place(x=750, y=570)
 
