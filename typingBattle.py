@@ -366,9 +366,9 @@ def gameMainWindow(set_language):
                     your_over += 1
             else:
                 break
-        if true_text[your_over] == os.linesep:
+        if true_text[your_over:].startswith(os.linesep):
             # 改行があったときは飛ばす
-            your_over += 1
+            your_over += len(os.linesep)
             your_text += os.linesep
             while true_text[your_over] == " " or true_text[your_over] == "\t":
                 # 更に行頭の空白を飛ばす
@@ -427,7 +427,7 @@ def gameMainWindow(set_language):
             return c.fetchone()
 
     def load_source(path):
-        f = open(path)
+        f = open(path, encoding='utf-8')
         source = f.read()
         f.close()
         print(source)
