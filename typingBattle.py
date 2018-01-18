@@ -10,6 +10,10 @@ from contextlib import closing
 
 windowSize = "800x600+0+0"  # 共通のウインドウサイズ
 
+ext_dir = {"Ruby":"rb","Python":"py","Swift":"swift"} 
+
+g = Github(setting.Github_User, setting.Github_Pass)
+dbname = "database.sqlite"
 
 # トップ画面
 def titleWindow():
@@ -62,9 +66,10 @@ def menuWindow():
 
     def start_game():
         valueCombo = combo.get()
-        print(valueCombo)
+        set_language = valueCombo
+        print(set_language)
         root.destroy()
-        stageSelectWindow()
+        stageSelectWindow(set_language)
 
     # galleryWindowに遷移するボタン
     def select_gallery():
@@ -100,7 +105,7 @@ def menuWindow():
     # コンボボックスの作成(rootに配置,リストの値を編集不可(readonly)に設定)
     combo = ttk.Combobox(root, state='readonly', width=30)
     # リストの値を設定
-    combo["values"] = ("Ruby", "Python", "Swift")
+    combo["values"] = tuple(ext_dir.keys())
     # デフォルトの値を食費(index=0)に設定
     combo.current(0)
     # コンボボックスの配置
@@ -186,7 +191,7 @@ def settingWindow():
     # ---------------------------------
 
 
-def stageSelectWindow():
+def stageSelectWindow(set_language):
     # menuWindowに戻るボタン
     def back_button():
         root.destroy()
@@ -195,7 +200,56 @@ def stageSelectWindow():
     # gameMainWindowへ進むボタン
     def start_button():
         root.destroy()
-        gameMainWindow()
+        gameMainWindow(set_language)
+
+    def search(gh,repo_keyword, language):
+        return gh.search_repositories("{0}+language:{1}".format(repo_keyword,language),sort="stars")[0]
+
+    def clone(repo, path):
+        clone_path = "{0}/{1}".format(path, repo.name)
+        if not os.path.exists(clone_path):
+            git.Git().clone("{0}".format(repo.git_url), clone_path)
+        regist(clone_path)
+
+    def regist(p): # p=path以下のファイルをデータベースに登録
+        with closing(sqlite3.connect(dbname)) as conn:
+            c = conn.cursor()
+
+            # テーブルが存在してないなら作成
+            create_sql = "create table if not exists files(name, path, complete, extension)"
+            c.execute(create_sql)
+
+            regist_sql = '''insert into files(name, path, complete, extension) select ?,?,?,? where not exists(select * from files where path = ?);'''
+            def crawling(path): # path以下のファイルを洗い出し
+                l = []
+                for i in os.listdir(path):
+                    if i[0] == ".": # dotfileをスルー
+                        continue
+                    new_path = os.path.join(path, i)
+                    if os.path.isdir(new_path):
+                        l += crawling(new_path)
+                    else:
+                        name = i
+                        path_s = os.path.abspath(new_path)
+                        complete = 0
+                        root, ext = os.path.splitext(path_s)
+                        ext = ext.replace(".", "", 1)
+                        l.append((name, path_s, complete, ext, path_s))
+                return l
+            file_list = crawling(p)
+
+            print(file_list)
+
+            c.executemany(regist_sql, file_list)
+            conn.commit()
+            conn.close()
+
+    def prepare_souce(gh, repo_keyword,language):
+        repo = search(gh,repo_keyword, language)
+        clone(repo, "repos")
+
+    repo_keyword = "sample"
+    prepare_souce(g,repo_keyword,set_language)
 
     # ---------------------------------
     # GUI作成
@@ -214,12 +268,14 @@ def stageSelectWindow():
     button_start = Button(root, text="ゲームスタート", font=("", 50), command=start_button)
     button_start.pack()
 
+
+
     # GUIの表示
     root.mainloop()
     # ---------------------------------
 
 
-def gameMainWindow():
+def gameMainWindow(set_language):
     # menuWindowに戻るボタン
     def back_button():
         root.destroy()
@@ -278,43 +334,7 @@ def gameMainWindow():
         i = input(">>> ")
         for n in range(int(i)):
             print(n)"""
-
-    g = Github(setting.Github_User, setting.Github_Pass)
-    dbname = "database.sqlite"
-
-    def regist(p): # p=path以下のファイルをデータベースに登録
-        with closing(sqlite3.connect(dbname)) as conn:
-            c = conn.cursor()
-
-            # テーブルが存在してないなら作成
-            create_sql = "create table if not exists files(name, path, complete, extension)"
-            c.execute(create_sql)
-
-            regist_sql = '''insert into files(name, path, complete, extension) select ?,?,?,? where not exists(select * from files where path = ?);'''
-            def crawling(path): # path以下のファイルを洗い出し
-                l = []
-                for i in os.listdir(path):
-                    if i[0] == ".": # dotfileをスルー
-                        continue
-                    new_path = os.path.join(path, i)
-                    if os.path.isdir(new_path):
-                        l += crawling(new_path)
-                    else:
-                        name = i
-                        path_s = os.path.abspath(new_path)
-                        complete = 0
-                        root, ext = os.path.splitext(path_s)
-                        ext = ext.replace(".", "", 1)
-                        l.append((name, path_s, complete, ext, path_s))
-                return l
-            file_list = crawling(p)
-
-            print(file_list)
-
-            c.executemany(regist_sql, file_list)
-            conn.commit()
-            conn.close()
-
+    
     def select_source(ext):
         with closing(sqlite3.connect((dbname))) as conn:
             c = conn.cursor()
@@ -329,22 +349,8 @@ def gameMainWindow():
         print(source)
         return source
 
-    def clone(repo, path):
-        clone_path = "{0}/{1}".format(path, repo.name)
-        if not os.path.exists(clone_path):
-            git.Git().clone("{0}".format(repo.git_url), clone_path)
-        regist(clone_path)
-
-    def search(gh,repo_keyword, language):
-        return gh.search_repositories("{0}+language:{1}".format(repo_keyword,language),sort="stars")[0]
-
-    def prepare_souce(gh, repo_keyword,language):
-        repo = search(gh,repo_keyword, language)
-        clone(repo, "repos")
-    repo_keyword = "sample"
-    language = "Python"
-    prepare_souce(g,repo_keyword,language)
-    row = select_source("py")
+    print(set_language)
+    row = select_source(ext_dir[set_language])
     print(row)
     trueStr = load_source(row[1])
 
