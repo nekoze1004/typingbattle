@@ -1,6 +1,12 @@
 from tkinter import *
 from tkinter import ttk
+from github import Github
+import setting
+import git
 import os
+import sqlite3
+from contextlib import closing
+
 
 windowSize = "800x600+0+0"  # 共通のウインドウサイズ
 
@@ -272,6 +278,65 @@ def gameMainWindow():
         i = input(">>> ")
         for n in range(int(i)):
             print(n)"""
+
+    g = Github(setting.Github_User, setting.Github_Pass)
+    dbname = "database.sqlite"
+
+    def regist(p): # p=path以下のファイルをデータベースに登録
+        with closing(sqlite3.connect(dbname)) as conn:
+            c = conn.cursor()
+
+            # テーブルが存在してないなら作成
+            create_sql = "create table if not exists files(name, path, complete, extension)"
+            c.execute(create_sql)
+
+            regist_sql = '''insert into files(name, path, complete, extension) select ?,?,?,? where not exists(select * from files where path = ?);'''
+            def crawling(path): # path以下のファイルを洗い出し
+                l = []
+                for i in os.listdir(path):
+                    if i[0] == ".": # dotfileをスルー
+                        continue
+                    new_path = os.path.join(path, i)
+                    if os.path.isdir(new_path):
+                        l += crawling(new_path)
+                    else:
+                        name = i
+                        path_s = os.path.abspath(new_path)
+                        complete = 0
+                        root, ext = os.path.splitext(path_s)
+                        ext = ext.replace(".", "", 1)
+                        l.append((name, path_s, complete, ext, path_s))
+                return l
+            file_list = crawling(p)
+
+            print(file_list)
+
+            c.executemany(regist_sql, file_list)
+            conn.commit()
+            conn.close()
+
+    def select_source(ext):
+        with closing(sqlite3.connect((dbname))) as conn:
+            c = conn.cursor()
+            sql = "select * from files where extension like '%{0}' order by complete asc;".format(ext)
+            return c.fetchone()
+
+    def clone(repo, path):
+        clone_path = "{0}/{1}".format(path, repo.name)
+        if not os.path.exists(clone_path):
+            git.Git().clone("{0}".format(repo.git_url), clone_path)
+        regist(clone_path)
+
+    def search(gh,repo_keyword, language):
+        return gh.search_repositories("{0}+language:{1}".format(repo_keyword,language),sort="stars")[0]
+
+    def prepare_souce(gh, repo_keyword,language):
+        repo = search(gh,repo_keyword, language)
+        clone(repo, "repos")
+    repo_keyword = "sample"
+    language = "Python"
+    prepare_souce(g,repo_keyword,language)
+
 
     # 正解を表示するフレームの生成
     trueFrame = Frame(root, cnf, width=390, height=310)
