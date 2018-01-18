@@ -4,6 +4,7 @@ from github import Github
 import setting
 import git
 import os
+import re
 import sqlite3
 from contextlib import closing
 
@@ -289,17 +290,23 @@ def gameMainWindow(set_language):
         gameResultWindow()
 
     # もしtext[count]がコメントならば次のコメンドじゃないところまでcountをすすめて返す
-    comment = {"Ruby":("#"), "Python":("#"), "swift":("//")}
+    comment = {"Ruby":("#"), "Python":("#","'''",'"""'), "swift":("//")}
     def overComment(text, count, set_language):
         puls = 0
         for c in comment[set_language]:
             print("コメントチェック:{0}".format(c))
-            print(text[count])
-            if c == text[count]:
+            print(text[count:])
+            if text[count:].startswith(c):
                 print("発見")
-                while text[count+puls] != os.linesep:
-                    puls += 1
-                return puls+count
+                if comment[set_language].index(c) == 0:
+                    while text[count+puls] != os.linesep:
+                        puls += 1
+                    return puls+count
+                else:
+                    puls = text[count+3:].find(c)
+                    print("{0}文字目で終わり".format(count))
+                    return puls+count+(len(c)*2)
+
         return count
 
 
@@ -342,6 +349,8 @@ def gameMainWindow(set_language):
             # キー入力が正しいとき
             your_text += true_text[your_over]
             your_over += 1
+            if len(true_text) > your_over:
+                print("終わり")
         yourStr_buff.set(your_text)
 
     # ---------------------------------
