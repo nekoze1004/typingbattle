@@ -295,7 +295,7 @@ def stageSelectWindow(set_language):
         repo = search(gh, repo_keyword, language)
         clone(repo, "repos")
 
-    repo_keyword = "sample"
+    repo_keyword = "test"
     prepare_souce(g, repo_keyword, set_language)
 
     # ---------------------------------
@@ -447,7 +447,7 @@ def gameMainWindow(set_language):
     def select_source(ext):
         with closing(sqlite3.connect((dbname))) as conn:
             c = conn.cursor()
-            sql = "select * from files where extension like '%{0}' order by complete asc;".format(ext)
+            sql = "select * from files where extension like '%{0}' order by random() asc;".format(ext)
             c.execute(sql)
             return c.fetchone()
 
