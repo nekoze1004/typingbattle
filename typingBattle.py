@@ -399,6 +399,10 @@ def gameMainWindow(set_language):
             your_text += true_text[your_over]
             your_over += 1
             enemyHP -= 10
+            if enemyHP <= 0:
+                enemyHP = 100
+            enemyX = EnemyPoseX.get()
+            enemyY = EnemyPoseY.get()
             enemyX += random.randint(-10, 10)
             enemyY += random.randint(-10, 10)
             with closing(sqlite3.connect(dbname)) as conn:
@@ -411,8 +415,9 @@ def gameMainWindow(set_language):
                 conn.close()
         yourStr_buff.set(your_text)
         EnemyHP.set(enemyHP)
-        EnemyPoseX.set(enemyX)
-        EnemyPoseY.set(enemyY)
+        # EnemyPoseX.set(enemyX)
+        # EnemyPoseY.set(enemyY)
+        EnemyCanvas.place(x=enemyX,y=enemyY)
 
     # ---------------------------------
     # GUI作成
@@ -445,8 +450,11 @@ def gameMainWindow(set_language):
     row = select_source(ext_dir[set_language])
 
     print(row)
-    set_language = "Python"
-    trueStr = load_source("./debug.py")
+    # set_language = "Python"
+    # trueStr = load_source("./debug.py")
+
+    trueStr = load_source(row[1])
+
 
     # フレームの装飾設定
     cnf = {"bg": "white", "bd": 5, "relief": GROOVE}
