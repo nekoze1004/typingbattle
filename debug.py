@@ -6,5 +6,7 @@ not comment
 これもコメント
 """
 #タイピングテスト用
-print("hello,world") # コメント
+print() # コメント
 #これはコメント
+
+print()

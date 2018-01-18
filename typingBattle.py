@@ -16,17 +16,53 @@ ext_dir = {"Ruby":"rb","Python":"py","Swift":"swift"}
 g = Github(setting.Github_User, setting.Github_Pass)
 dbname = "database.sqlite"
 
+user = "default"
+
+def get_count(name):
+        row=""
+        with closing(sqlite3.connect(dbname)) as conn:
+            cur = conn.cursor()
+
+            get_sql = "update users set count = count + 1 where name = '{0}';".format(name)
+            print(get_sql)
+            cur.execute(get_sql)
+
+            row = c.fetchone()
+            print(row)
+            conn.commit()
+            conn.close()
+        
+        return row
+
+
 # トップ画面
 def titleWindow():
     # 「おわる」ボタンを押したら画面を閉じる
     def quit_button():
         root.destroy()
 
+    def user_regist(name):
+        with closing(sqlite3.connect(dbname)) as conn:
+            cur = conn.cursor()
+
+            # テーブルが存在してないなら作成
+            create_sql = "create table if not exists users(name, count);"
+            cur.execute(create_sql)
+
+            regist_sql = "insert into users(name, count) select '{0}',0 where not exists(select * from users where name = '{0}');".format(name)
+            cur.execute(regist_sql)
+            
+            conn.commit()
+            conn.close()
+    
     # 「はじめる」ボタンを押してメニュー画面に遷移
     def start_button():
+        global user
         # entry_1の中身を取得
         entryValue = entry_1.get()
         print(entryValue)
+        user = entryValue
+        user_regist(user)
         root.destroy()
         menuWindow()
 
@@ -295,7 +331,7 @@ def gameMainWindow(set_language):
         puls = 0
         for c in comment[set_language]:
             print("コメントチェック:{0}".format(c))
-            print(text[count:])
+            # print(text[count:])
             if text[count:].startswith(c):
                 print("発見")
                 if comment[set_language].index(c) == 0:
@@ -304,7 +340,7 @@ def gameMainWindow(set_language):
                     return puls+count
                 else:
                     puls = text[count+3:].find(c)
-                    print("{0}文字目で終わり".format(count))
+                    # print("{0}文字目で終わり".format(count))
                     return puls+count+(len(c)*2)
 
         return count
@@ -317,6 +353,11 @@ def gameMainWindow(set_language):
         true_text = trueStr_buff.get()
         your_text = yourStr_buff.get()
         your_over = len(your_text)
+        print("len(true_text):{0}".format(len(true_text)))
+        print("your_over:{0}".format(your_over))
+        if len(true_text) <= your_over+1:
+                print("終わり")
+                return
         while True:
             next_over = overComment(true_text,your_over, set_language)
             if your_over < next_over:
@@ -349,8 +390,14 @@ def gameMainWindow(set_language):
             # キー入力が正しいとき
             your_text += true_text[your_over]
             your_over += 1
-            if len(true_text) > your_over:
-                print("終わり")
+            with closing(sqlite3.connect(dbname)) as conn:
+                c = conn.cursor()
+                print(user)
+                count_sql = "update users set count = count + 1 where name = '{0}';".format(user)
+
+                c.execute(count_sql)
+                conn.commit()
+                conn.close()
         yourStr_buff.set(your_text)
 
     # ---------------------------------
