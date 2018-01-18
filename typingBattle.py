@@ -319,7 +319,15 @@ def gameMainWindow():
         with closing(sqlite3.connect((dbname))) as conn:
             c = conn.cursor()
             sql = "select * from files where extension like '%{0}' order by complete asc;".format(ext)
+            c.execute(sql)
             return c.fetchone()
+
+    def load_source(path):
+        f = open(path)
+        source = f.read()
+        f.close()
+        print(source)
+        return source
 
     def clone(repo, path):
         clone_path = "{0}/{1}".format(path, repo.name)
@@ -336,6 +344,9 @@ def gameMainWindow():
     repo_keyword = "sample"
     language = "Python"
     prepare_souce(g,repo_keyword,language)
+    row = select_source("py")
+    print(row)
+    trueStr = load_source(row[1])
 
 
     # 正解を表示するフレームの生成
