@@ -335,7 +335,7 @@ def gameMainWindow(set_language):
             if text[count:].startswith(c):
                 print("発見")
                 if comment[set_language].index(c) == 0:
-                    while text[count+puls] != os.linesep:
+                    while not text[count+puls:].startswit(os.linesep):
                         puls += 1
                     return puls+count
                 else:
