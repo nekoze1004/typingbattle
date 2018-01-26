@@ -295,7 +295,7 @@ def stageSelectWindow(set_language):
         repo = search(gh, repo_keyword, language)
         clone(repo, "repos")
 
-    repo_keyword = "test"
+    repo_keyword = "hello"
     prepare_souce(g, repo_keyword, set_language)
 
     # ---------------------------------
