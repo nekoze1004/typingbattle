@@ -18,6 +18,12 @@ dbname = "database.sqlite"
 
 user = "default"
 
+global enemyCount
+enemyCount = 0
+
+global EnemyCanvas
+global EnemyName
+
 
 def get_count(name):
     row = ""
@@ -289,7 +295,7 @@ def stageSelectWindow(set_language):
         repo = search(gh, repo_keyword, language)
         clone(repo, "repos")
 
-    repo_keyword = "sample"
+    repo_keyword = "hello"
     prepare_souce(g, repo_keyword, set_language)
 
     # ---------------------------------
@@ -334,7 +340,7 @@ def gameMainWindow(set_language):
         puls = 0
         for c in comment[set_language]:
             print("コメントチェック:{0}".format(c))
-            print(text[count:])
+            # print(text[count:])
             if text[count:].startswith(c):
                 print("発見")
                 if comment[set_language].index(c) == 0:
@@ -352,6 +358,7 @@ def gameMainWindow(set_language):
     # 入力時に正しいかどうか判定する
     # 入力した時に何かしたいときは個々に書く
     def check_input(event):
+        global enemyCount
         print("pressed", repr(event.char))
         true_text = trueStr_buff.get()
         your_text = yourStr_buff.get()
@@ -398,7 +405,16 @@ def gameMainWindow(set_language):
             # キー入力が正しいとき
             your_text += true_text[your_over]
             your_over += 1
-            enemyHP -= 10
+            enemyHP -= 10/(enemyCount+1)
+            if enemyHP <= 0:
+                # 新しい敵生成enemyHP
+                enemyCount += 1
+                EnemyImg = PhotoImage(file=enemy_list[enemyCount%2][0])
+                EnemyName.text = enemy_list[enemyCount%2][1]
+                enemyHP = 100
+                EnemyCanvas.image = EnemyImg
+            enemyX = EnemyPoseX.get()
+            enemyY = EnemyPoseY.get()
             enemyX += random.randint(-10, 10)
             enemyY += random.randint(-10, 10)
             with closing(sqlite3.connect(dbname)) as conn:
@@ -411,8 +427,9 @@ def gameMainWindow(set_language):
                 conn.close()
         yourStr_buff.set(your_text)
         EnemyHP.set(enemyHP)
-        EnemyPoseX.set(enemyX)
-        EnemyPoseY.set(enemyY)
+        # EnemyPoseX.set(enemyX)
+        # EnemyPoseY.set(enemyY)
+        EnemyCanvas.place(x=enemyX,y=enemyY)
 
     # ---------------------------------
     # GUI作成
@@ -430,7 +447,7 @@ def gameMainWindow(set_language):
     def select_source(ext):
         with closing(sqlite3.connect((dbname))) as conn:
             c = conn.cursor()
-            sql = "select * from files where extension like '%{0}' order by complete asc;".format(ext)
+            sql = "select * from files where extension like '%{0}' order by random() asc;".format(ext)
             c.execute(sql)
             return c.fetchone()
 
@@ -445,8 +462,11 @@ def gameMainWindow(set_language):
     row = select_source(ext_dir[set_language])
 
     print(row)
-    set_language = "Python"
-    trueStr = load_source("./debug.py")
+    # set_language = "Python"
+    # trueStr = load_source("./debug.py")
+
+    trueStr = load_source(row[1])
+
 
     # フレームの装飾設定
     cnf = {"bg": "white", "bd": 5, "relief": GROOVE}
@@ -469,10 +489,12 @@ def gameMainWindow(set_language):
     battleFrame = Frame(root, cnf, width=785, height=245)
     battleLabel = Label(battleFrame, text="てき が あらわれた !!")
 
+    enemy_list = [("python-icon_128.png","ニショクヘビ"),("ruby.png","るび")]
+
     EnemyCanvas = Canvas(battleFrame, width=128, height=128)
-    EnemyImg = PhotoImage(file="python-icon_128.png")
+    EnemyImg = PhotoImage(file=enemy_list[enemyCount%2][0])
     EnemyCanvas.create_image(0, 0, image=EnemyImg, anchor=NW)
-    EnemyName = Label(battleFrame, text="ニショクヘビ")
+    EnemyName = Label(battleFrame, text=enemy_list[enemyCount%2][1])
     EnemyPoseX = IntVar()
     EnemyPoseX.set(325)
     EnemyPoseY = IntVar()
